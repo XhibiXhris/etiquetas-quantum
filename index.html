@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de Etiquetas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiko:wght@400;600;700&family=Lexend+Deca:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --azul:#424D59; --naranja:#D96C4E; --beige1:#F3E8D5; --beige2:#99907E;
+  --gold:#C9A369; --blanco:#FFFFFF;
+  --bg:#F7F6F3; --panel:#FFFFFF; --line:#E2DFD8; --text:#2C333B; --muted:#6F7780;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Lexend Deca',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:14px; line-height:1.45;
+}
+h1,h2,h3,.amiko{font-family:'Amiko',sans-serif}
+
+header{
+  background:var(--azul); color:#fff; padding:14px 20px;
+  display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+}
+header h1{font-size:18px; margin:0; font-weight:700; letter-spacing:.2px}
+header .sub{font-size:12.5px; color:#C9CDD2}
+
+.wrap{max-width:1240px; margin:0 auto; padding:18px 16px 60px; display:grid; grid-template-columns:400px 1fr; gap:18px; align-items:start}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}}
+
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px}
+.card h2{font-size:13px; text-transform:uppercase; letter-spacing:.8px; margin:0 0 12px; color:var(--azul)}
+
+label{display:block; font-size:12px; font-weight:500; color:var(--muted); margin:0 0 4px}
+input[type=text],input[type=number],select,textarea{
+  width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px;
+  font-family:inherit; font-size:14px; background:#fff; color:var(--text);
+}
+textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.6; resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--naranja); outline-offset:-1px; border-color:var(--naranja)}
+.field{margin-bottom:12px}
+.row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+
+button{
+  font-family:inherit; font-size:13.5px; font-weight:500; cursor:pointer;
+  border-radius:7px; padding:9px 14px; border:1px solid transparent; transition:.12s;
+}
+.btn-primary{background:var(--naranja); color:#fff}
+.btn-primary:hover{background:#c55f43}
+.btn-dark{background:var(--azul); color:#fff}
+.btn-dark:hover{background:#353e47}
+.btn-ghost{background:#fff; border-color:var(--line); color:var(--text)}
+.btn-ghost:hover{border-color:var(--azul)}
+.btn-row{display:flex; gap:8px; flex-wrap:wrap}
+button:disabled{opacity:.45; cursor:not-allowed}
+
+.msg{font-size:12.5px; padding:8px 10px; border-radius:6px; margin-top:8px; display:none}
+.msg.ok{display:block; background:#EAF3EC; color:#2A5E37; border:1px solid #C6E0CC}
+.msg.warn{display:block; background:#FBF2E3; color:#7A5A16; border:1px solid #E8D5AA}
+.msg.err{display:block; background:#FBEAE6; color:#8C3A25; border:1px solid #F0C9BE}
+
+.preview-stage{
+  background:repeating-conic-gradient(#EFEDE8 0% 25%, #F7F6F3 0% 50%) 50%/16px 16px;
+  border:1px solid var(--line); border-radius:var(--radius);
+  padding:26px; display:flex; justify-content:center; align-items:center; min-height:220px; overflow:auto;
+}
+.zoomwrap{transform-origin:center center}
+
+/* ---------- LA ETIQUETA ---------- */
+.label{
+  background:#fff; color:#000; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;
+  box-shadow:0 1px 6px rgba(0,0,0,.14);
+}
+.label .lbl-name{
+  font-weight:700; text-align:center; line-height:1.08; width:100%; flex:0 0 auto;
+  overflow:hidden; word-break:break-word; text-transform:uppercase;
+}
+.label .lbl-bc{width:100%; display:flex; justify-content:center; align-items:center}
+.label .lbl-bc svg{display:block}
+.label .lbl-foot{width:100%; text-align:center; line-height:1.1; font-weight:500; overflow:hidden; white-space:nowrap}
+
+/* tabla de lote */
+table{width:100%; border-collapse:collapse; font-size:13px}
+th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--line)}
+td{padding:7px 8px; border-bottom:1px solid #F0EEE9; vertical-align:middle}
+tr.sel td{background:#FDF4F1}
+td.mono{font-family:ui-monospace,Menlo,monospace; font-size:12.5px; white-space:nowrap}
+td.nm{max-width:1px; width:99%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mini{border:none; background:none; padding:4px 6px; font-size:15px; line-height:1; color:var(--muted); cursor:pointer; border-radius:5px}
+.mini:hover{background:#F2F0EC; color:var(--azul)}
+.empty{color:var(--muted); font-size:13px; padding:14px 4px; text-align:center}
+.tag{display:inline-block; font-size:10.5px; padding:2px 6px; border-radius:4px; background:var(--beige1); color:#7A6742; font-weight:600; letter-spacing:.3px}
+details{margin-top:12px; border-top:1px solid var(--line); padding-top:10px}
+summary{cursor:pointer; font-size:12.5px; color:var(--azul); font-weight:500}
+details .body{font-size:12.5px; color:var(--muted); margin-top:8px; line-height:1.65}
+details .body ol{padding-left:18px; margin:6px 0}
+details .body code{background:#F2F0EC; padding:1px 5px; border-radius:4px; font-size:12px}
+.hint{font-size:11.5px; color:var(--muted); margin-top:4px}
+.chk{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text); margin-bottom:10px}
+.chk input{width:16px; height:16px; accent-color:var(--naranja); margin:0}
+.statline{font-size:12px; color:var(--muted); margin-top:10px; text-align:center}
+
+/* ---------- IMPRESIÓN ---------- */
+#printArea{position:absolute; left:-10000px; top:0; visibility:hidden; pointer-events:none}
+@media print{
+  html,body{background:#fff !important; margin:0 !important; padding:0 !important}
+  body>*{display:none !important}
+  #printArea{display:block !important; position:static !important; left:auto !important; top:auto !important; visibility:visible !important}
+  .label{box-shadow:none !important; break-inside:avoid; page-break-inside:avoid}
+  .print-page{break-after:page; page-break-after:always}
+  .print-page:last-child{break-after:auto; page-break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Generador de Etiquetas</h1>
+  <span class="sub">Códigos de barras para impresora térmica · Quantum Imports</span>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ COLUMNA IZQUIERDA ============ -->
+  <div>
+    <div class="card">
+      <h2>Etiqueta</h2>
+
+      <div class="field">
+        <label for="fName">Nombre del producto</label>
+        <textarea id="fName" rows="3" placeholder="STEJAR THERMAL PAD 95X45X1.5MM 12.8 W/MK EXTREME ALTO RENDIMIENTO"></textarea>
+        <div class="hint">Se ajusta solo para que quepa. Máx. 4 líneas.</div>
+      </div>
+
+      <div class="field">
+        <label for="fCode">Código de barras</label>
+        <input type="text" id="fCode" placeholder="7503050904104" autocomplete="off" inputmode="numeric">
+        <div id="codeMsg" class="msg"></div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="fType">Simbología</label>
+          <select id="fType">
+            <option value="auto">Auto (recomendado)</option>
+            <option value="ean13">EAN-13</option>
+            <option value="ean8">EAN-8</option>
+            <option value="upca">UPC-A</option>
+            <option value="code128">Code 128</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fQty">Copias</label>
+          <input type="number" id="fQty" value="1" min="1" max="500">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="fFoot">Pie de etiqueta (opcional)</label>
+        <input type="text" id="fFoot" placeholder="SKU P00123 · QUANTUM" autocomplete="off">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn-primary" id="btnAdd">Agregar al lote</button>
+        <button class="btn-ghost" id="btnClearForm">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>Formato de etiqueta</h2>
+      <div class="field">
+        <label for="fPreset">Tamaño</label>
+        <select id="fPreset">
+          <option value="40x25">40 × 25 mm</option>
+          <option value="50x25">50 × 25 mm</option>
+          <option value="50x30">50 × 30 mm</option>
+          <option value="58x40">58 × 40 mm</option>
+          <option value="38x25">38 × 25 mm</option>
+          <option value="32x19">32 × 19 mm</option>
+          <option value="custom">Personalizado…</option>
+        </select>
+      </div>
+      <div class="row" id="customSize" style="display:none">
+        <div class="field"><label for="fW">Ancho (mm)</label><input type="number" id="fW" value="40" min="15" max="120" step="1"></div>
+        <div class="field"><label for="fH">Alto (mm)</label><input type="number" id="fH" value="25" min="10" max="120" step="1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="fMargin">Margen (mm)</label><input type="number" id="fMargin" value="1.2" min="0" max="6" step="0.1"></div>
+        <div class="field"><label for="fRot">Orientación</label>
+          <select id="fRot"><option value="0">Horizontal</option><option value="90">Vertical (girada 90°)</option></select>
+        </div>
+      </div>
+      <div class="chk"><input type="checkbox" id="fShowName" checked><label for="fShowName" style="margin:0">Mostrar nombre del producto</label></div>
+      <div class="chk"><input type="checkbox" id="fShowDigits" checked><label for="fShowDigits" style="margin:0">Mostrar dígitos bajo las barras</label></div>
+      <div class="chk" style="margin-bottom:0"><input type="checkbox" id="fBold"><label for="fBold" style="margin:0">Barras más gruesas (térmica de baja calidad)</label></div>
+    </div>
+  </div>
+
+  <!-- ============ COLUMNA DERECHA ============ -->
+  <div>
+    <div class="card">
+      <h2>Vista previa <span id="zoomTag" class="tag">tamaño real</span></h2>
+      <div class="preview-stage" id="stage">
+        <div class="zoomwrap" id="zoomwrap"><div id="preview"></div></div>
+      </div>
+      <div class="btn-row" style="margin-top:12px; justify-content:center">
+        <button class="btn-ghost" data-zoom="1">1×</button>
+        <button class="btn-ghost" data-zoom="2">2×</button>
+        <button class="btn-ghost" data-zoom="4">4×</button>
+        <button class="btn-dark" id="btnPdf">Guardar PDF</button>
+        <button class="btn-ghost" id="btnPng">PNG</button>
+        <button class="btn-ghost" id="btnSvg">SVG</button>
+      </div>
+      <div class="statline" id="statline"></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>Lote a imprimir (<span id="loteCount">0</span> etiquetas)</h2>
+      <div id="loteBox"><div class="empty">El lote está vacío. Llena el formulario y dale “Agregar al lote”.</div></div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn-dark" id="btnPrintLote">Imprimir lote</button>
+        <button class="btn-primary" id="btnPrintOne">Imprimir solo esta</button>
+        <button class="btn-ghost" id="btnPdfLote">Guardar lote en PDF</button>
+        <button class="btn-ghost" id="btnClearLote">Vaciar lote</button>
+      </div>
+
+      <details>
+        <summary>Cargar varias de golpe (pegar lista)</summary>
+        <div class="body">
+          Una por línea, separadas por <code>|</code> o por tabulador (sirve pegar de Excel):<br>
+          <code>codigo | nombre | copias</code>
+          <textarea id="bulk" rows="5" style="margin-top:8px" placeholder="7503050904104 | STEJAR THERMAL PAD 95X45X1.5MM 12.8 W/MK EXTREME | 10&#10;7503050904111 | STEJAR THERMAL PAD 120X20X1MM | 5"></textarea>
+          <div class="btn-row" style="margin-top:8px"><button class="btn-ghost" id="btnBulk">Cargar al lote</button></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Cómo imprimir bien en la térmica (léelo la primera vez)</summary>
+        <div class="body">
+          <ol>
+            <li>En el diálogo de impresión elige <b>tu impresora térmica</b>, no una PDF.</li>
+            <li><b>Escala: 100%</b>. Nunca “Ajustar a la página” — deforma el código y deja de escanear.</li>
+            <li><b>Márgenes: Ninguno</b>.</li>
+            <li>Desactiva <b>Encabezados y pies de página</b>.</li>
+            <li>En las propiedades del driver, el tamaño de papel debe ser el mismo que elegiste aquí (ej. 40×25 mm).</li>
+            <li>Imprime <b>una</b> de prueba y pásala por el escáner antes de tirar el lote completo.</li>
+            <li>Si prefieres guardar el archivo y mandarlo a imprimir después, usa <b>Guardar PDF</b>: sale vectorial y ya viene del tamaño exacto de la etiqueta.</li>
+          </ol>
+          Si el escáner no lee: sube el <b>oscurecimiento/densidad</b> del driver, o activa “barras más gruesas”. Si sigue fallando, la etiqueta es muy chica para el código — usa 50×25 mm.
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+'use strict';
+/* =========================================================
+   1. CODIFICADORES
+   ========================================================= */
+const L=['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+const G=['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+const R=['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+const PARITY=['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+
+function eanCheck(digits){ // digits = string sin verificador
+  let s=0;
+  for(let i=0;i<digits.length;i++){
+    const d=+digits[i];
+    const w=((digits.length-i)%2===1)?3:1; // el de más a la derecha pesa 3
+    s+=d*w;
+  }
+  return (10-(s%10))%10;
+}
+
+function encodeEAN13(code){ // 13 dígitos válidos
+  const first=+code[0], left=code.slice(1,7), right=code.slice(7);
+  const par=PARITY[first];
+  let bits='101';
+  for(let i=0;i<6;i++) bits += (par[i]==='L'?L:G)[+left[i]];
+  bits+='01010';
+  for(let i=0;i<6;i++) bits += R[+right[i]];
+  bits+='101';
+  return {bits, quietL:11, quietR:7,
+    guards:[[0,3],[45,50],[92,95]],
+    text:[{t:code[0],x:-6,w:11},{t:left,x:3,w:42},{t:right,x:50,w:42}]};
+}
+
+function encodeEAN8(code){ // 8 dígitos
+  const l=code.slice(0,4), r=code.slice(4);
+  let bits='101';
+  for(let i=0;i<4;i++) bits += L[+l[i]];
+  bits+='01010';
+  for(let i=0;i<4;i++) bits += R[+r[i]];
+  bits+='101';
+  return {bits, quietL:7, quietR:7,
+    guards:[[0,3],[31,36],[64,67]],
+    text:[{t:l,x:3,w:28},{t:r,x:36,w:28}]};
+}
+
+const C128=['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
+'221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
+'221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
+'212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
+'231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
+'231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
+'314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
+'112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
+'111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
+'214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
+'114131','311141','411131','211412','211214','211232','2331112'];
+
+function encodeCode128(txt){
+  const allDigits=/^\d+$/.test(txt);
+  const useC = allDigits && txt.length>=4 && txt.length%2===0;
+  const start = useC?105:104;
+  const vals=[];
+  if(useC){ for(let i=0;i<txt.length;i+=2) vals.push(+txt.substr(i,2)); }
+  else { for(const ch of txt){ const c=ch.charCodeAt(0); if(c<32||c>126) throw new Error('Carácter no soportado: "'+ch+'"'); vals.push(c-32); } }
+  let sum=start;
+  vals.forEach((v,i)=>{ sum += v*(i+1); });
+  const check=sum%103;
+  const seq=[start,...vals,check,106];
+  let bits='';
+  for(const s of seq){
+    const p=C128[s];
+    let bar=true;
+    for(const w of p){ bits += (bar?'1':'0').repeat(+w); bar=!bar; }
+  }
+  return {bits, quietL:10, quietR:10, guards:[], text:[{t:txt,x:0,w:bits.length}], mono:true};
+}
+
+/* ---- resolver tipo + validar ---- */
+function build(rawCode, type){
+  const code=(rawCode||'').trim();
+  if(!code) throw new Error('Falta el código.');
+  const digits=code.replace(/[\s-]/g,'');
+  const onlyNum=/^\d+$/.test(digits);
+  let t=type;
+  if(t==='auto'){
+    if(onlyNum && (digits.length===12||digits.length===13)) t='ean13';
+    else if(onlyNum && (digits.length===7||digits.length===8)) t='ean8';
+    else t='code128';
+  }
+  let note='';
+  if(t==='ean13'||t==='upca'){
+    const need = t==='upca'?12:13;
+    if(!onlyNum) throw new Error((t==='upca'?'UPC-A':'EAN-13')+' solo acepta dígitos.');
+    let full=digits;
+    if(digits.length===need-1){ full=digits+eanCheck(digits); note='Se calculó el dígito verificador: '+full[full.length-1]; }
+    else if(digits.length===need){
+      const ok=eanCheck(digits.slice(0,-1));
+      if(ok!==+digits[digits.length-1]) throw new Error('Dígito verificador incorrecto. Con '+digits.slice(0,-1)+' debería terminar en '+ok+'.');
+    } else throw new Error((t==='upca'?'UPC-A':'EAN-13')+' necesita '+need+' dígitos ('+(need-1)+' y yo calculo el último). Escribiste '+digits.length+'.');
+    const ean13 = t==='upca' ? '0'+full : full;
+    const enc=encodeEAN13(ean13);
+    if(t==='upca'){ enc.text=[{t:full[0],x:-6,w:11},{t:full.slice(1,6),x:10,w:35},{t:full.slice(6,11),x:50,w:35},{t:full[11],x:96,w:11}]; }
+    return {enc, code:full, type:t, note};
+  }
+  if(t==='ean8'){
+    if(!onlyNum) throw new Error('EAN-8 solo acepta dígitos.');
+    let full=digits;
+    if(digits.length===7){ full=digits+eanCheck(digits); note='Se calculó el dígito verificador: '+full[7]; }
+    else if(digits.length===8){
+      const ok=eanCheck(digits.slice(0,7));
+      if(ok!==+digits[7]) throw new Error('Dígito verificador incorrecto. Debería terminar en '+ok+'.');
+    } else throw new Error('EAN-8 necesita 8 dígitos. Escribiste '+digits.length+'.');
+    return {enc:encodeEAN8(full), code:full, type:t, note};
+  }
+  return {enc:encodeCode128(code), code, type:'code128', note:''};
+}
+
+/* =========================================================
+   2. RENDER SVG DEL CÓDIGO
+   ========================================================= */
+function barcodeSVG(enc, opts){
+  const {widthMM, barHeightMM, showDigits, bold} = opts;
+  const total = enc.quietL + enc.bits.length + enc.quietR;
+  const X = widthMM/total;                 // ancho de módulo en mm
+  const guardExtra = enc.guards.length?5:0;
+  const textH = showDigits?8:0;
+  const H = barHeightMM/X;                 // alto de barras en unidades X
+  const vbH = H + guardExtra + textH;
+  const isGuard = i => enc.guards.some(g=>i>=g[0]&&i<g[1]);
+  const fat = bold?0.12:0;
+
+  let bars=''; const geomBars=[];
+  let i=0;
+  while(i<enc.bits.length){
+    if(enc.bits[i]==='1'){
+      let j=i; while(j<enc.bits.length&&enc.bits[j]==='1') j++;
+      const h = isGuard(i)? H+guardExtra : H;
+      const bx=enc.quietL+i-fat, bw=(j-i)+fat*2;
+      bars += '<rect x="'+bx.toFixed(4)+'" y="0" width="'+bw.toFixed(4)+'" height="'+h.toFixed(3)+'"/>';
+      geomBars.push({x:bx, w:bw, h});
+      i=j;
+    } else i++;
+  }
+
+  let txt=''; const geomTexts=[];
+  if(showDigits){
+    const fs = enc.mono?7:8.2;
+    const by = (H+guardExtra+textH-1.2).toFixed(2);
+    for(const seg of enc.text){
+      const x0 = enc.quietL + seg.x;
+      if(enc.mono){
+        txt += '<text x="'+(x0+seg.w/2).toFixed(2)+'" y="'+by+'" font-size="'+fs+'" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" letter-spacing="0.6">'+esc(seg.t)+'</text>';
+        geomTexts.push({t:seg.t, cx:x0+seg.w/2, by:+by, size:fs});
+      } else {
+        const per = seg.w/seg.t.length;
+        for(let k=0;k<seg.t.length;k++){
+          txt += '<text x="'+(x0+per*k+per/2).toFixed(2)+'" y="'+by+'" font-size="'+fs+'" text-anchor="middle" font-family="Helvetica,Arial,sans-serif">'+esc(seg.t[k])+'</text>';
+        }
+        for(let k=0;k<seg.t.length;k++) geomTexts.push({t:seg.t[k], cx:x0+per*k+per/2, by:+by, size:fs});
+      }
+    }
+  }
+  const hMM = vbH*X;
+  return {
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" width="'+widthMM.toFixed(3)+'mm" height="'+hMM.toFixed(3)+'mm" viewBox="0 0 '+total+' '+vbH.toFixed(3)+'" shape-rendering="crispEdges" fill="#000">'+bars+txt+'</svg>',
+    heightMM:hMM, moduleMM:X, modules:total,
+    geom:{bars:geomBars, texts:geomTexts, X, vbH}
+  };
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* =========================================================
+   3. RENDER DE LA ETIQUETA COMPLETA
+   ========================================================= */
+function fmt(){
+  const p=$('fPreset').value;
+  let w,h;
+  if(p==='custom'){ w=+$('fW').value||40; h=+$('fH').value||25; }
+  else { const a=p.split('x'); w=+a[0]; h=+a[1]; }
+  return {
+    w,h,
+    margin:+$('fMargin').value||0,
+    rot:+$('fRot').value,
+    showName:$('fShowName').checked,
+    showDigits:$('fShowDigits').checked,
+    bold:$('fBold').checked
+  };
+}
+
+function makeLabel(item){
+  const f=fmt();
+  // si va girada, el contenido se compone en el lienzo intercambiado
+  const cw = f.rot?f.h:f.w, ch = f.rot?f.w:f.h;
+  const inner = cw - f.margin*2;
+
+  const r = build(item.code, item.type);
+  const hasName = f.showName && item.name && item.name.trim();
+  const hasFoot = !!(item.foot && item.foot.trim());
+
+  // reparto vertical — el SVG mide barH + (guardas 5X + digitos 9X), hay que descontarlo
+  const totalMods = r.enc.quietL + r.enc.bits.length + r.enc.quietR;
+  const X = inner/totalMods;
+  const extraMM = ((r.enc.guards.length?5:0) + (f.showDigits?9:0)) * X;
+  const avail = ch - f.margin*2;
+  const nameH = hasName ? Math.min(6.2, avail*0.30) : 0;
+  const footH = hasFoot ? 2.6 : 0;
+  let barH = avail - nameH - footH - extraMM - 0.4;
+  barH = Math.max(4, Math.min(barH, avail*0.8));
+
+  const bc = barcodeSVG(r.enc, {widthMM:inner, barHeightMM:barH, showDigits:f.showDigits, bold:f.bold});
+
+  const el=document.createElement('div');
+  el.className='label';
+  el.style.width=cw+'mm'; el.style.height=ch+'mm'; el.style.padding=f.margin+'mm';
+  if(f.rot){ el.style.transform='rotate(90deg)'; el.style.transformOrigin='center center'; }
+
+  let html='';
+  if(hasName){
+    html+='<div class="lbl-name" data-fit="'+nameH.toFixed(2)+'" style="max-height:'+nameH.toFixed(2)+'mm">'+esc(item.name.trim())+'</div>';
+  }
+  html+='<div class="lbl-bc" style="flex:1 1 auto">'+bc.svg+'</div>';
+  if(hasFoot){
+    html+='<div class="lbl-foot" style="font-size:1.9mm">'+esc(item.foot.trim())+'</div>';
+  }
+  el.innerHTML=html;
+  const meta={module:bc.moduleMM, modules:bc.modules, type:r.type, code:r.code, note:r.note, svg:bc.svg, barH};
+  if(f.rot){
+    const wrap=document.createElement("div");
+    wrap.style.cssText="width:"+f.w+"mm;height:"+f.h+"mm;display:flex;align-items:center;justify-content:center;background:#fff;overflow:hidden";
+    wrap.appendChild(el); wrap._meta=meta; wrap.classList.add("rotwrap");
+    return wrap;
+  }
+  el._meta=meta;
+  return el;
+}
+
+// reduce el font-size hasta que el nombre quepa en su caja
+function fitNames(root){
+  root.querySelectorAll('.lbl-name').forEach(n=>{
+    const maxMM=parseFloat(n.dataset.fit);
+    const maxPx=maxMM*(96/25.4);
+    let size=2.35; // mm
+    n.style.fontSize=size+'mm';
+    let guard=0;
+    while(n.scrollHeight>maxPx+0.5 && size>1.15 && guard<40){ size-=0.08; n.style.fontSize=size.toFixed(2)+'mm'; guard++; }
+  });
+}
+
+
+/* =========================================================
+   3.5 GENERADOR DE PDF (vectorial, sin librerias)
+   ========================================================= */
+const MM2PT = 72/25.4;
+
+// Helvetica -> WinAnsi. Lo que no exista en latin-1 se aproxima.
+function winAnsi(str){
+  const map={'‘':"'",'’':"'",'“':'"','”':'"','–':'-','—':'-','…':'...',' ':' ','•':'-','·':'·'};
+  let out='';
+  for(const ch of String(str)){
+    const c = map[ch] !== undefined ? map[ch] : ch;
+    for(const k of c){ const code=k.charCodeAt(0); out += code<256 ? k : '?'; }
+  }
+  return out;
+}
+function pdfEsc(s){ return winAnsi(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)'); }
+
+// medidor de texto con la misma metrica que usara el PDF
+let _mc=null;
+function measure(txt, sizePt, bold){
+  if(!_mc){ const c=document.createElement('canvas'); _mc=c.getContext('2d'); }
+  _mc.font=(bold?'bold ':'')+sizePt+'px Helvetica, Arial, sans-serif';
+  return _mc.measureText(txt).width;
+}
+// parte el texto en lineas que quepan en maxW
+function wrapText(txt, sizePt, bold, maxW){
+  const words=String(txt).trim().split(/\s+/).filter(Boolean);
+  const lines=[]; let cur='';
+  for(const w of words){
+    const t = cur? cur+' '+w : w;
+    if(measure(t,sizePt,bold)<=maxW || !cur) cur=t;
+    else { lines.push(cur); cur=w; }
+  }
+  if(cur) lines.push(cur);
+  return lines;
+}
+
+// Compone UNA etiqueta como content stream de PDF. Todo en puntos, origen abajo-izq.
+function labelStream(item, f){
+  const r=build(item.code, item.type);
+  const cw = f.rot? f.h : f.w, ch = f.rot? f.w : f.h;
+  const inner = cw - f.margin*2;
+  const hasName = f.showName && item.name && item.name.trim();
+  const hasFoot = !!(item.foot && item.foot.trim());
+
+  const totalMods = r.enc.quietL + r.enc.bits.length + r.enc.quietR;
+  const X = inner/totalMods;
+  const extraMM = ((r.enc.guards.length?5:0) + (f.showDigits?9:0)) * X;
+  const avail = ch - f.margin*2;
+  const nameMax = hasName ? Math.min(6.2, avail*0.30) : 0;
+  const footH = hasFoot ? 2.6 : 0;
+  let barH = avail - nameMax - footH - extraMM - 0.4;
+  barH = Math.max(4, Math.min(barH, avail*0.8));
+
+  const bc = barcodeSVG(r.enc, {widthMM:inner, barHeightMM:barH, showDigits:f.showDigits, bold:f.bold});
+  const g = bc.geom;
+
+  // ---- nombre: mismo auto-encogido que en pantalla, pero con metrica de Helvetica
+  let nameLines=[], nameSizeMM=0, nameBlockMM=0;
+  if(hasName){
+    const LH=1.08;
+    for(let sz=2.35; sz>=1.15; sz-=0.08){
+      const lines=wrapText(item.name, sz*MM2PT, true, inner*MM2PT);
+      if(lines.length*sz*LH <= nameMax+0.01){ nameLines=lines; nameSizeMM=sz; break; }
+    }
+    if(!nameLines.length){ nameSizeMM=1.15; nameLines=wrapText(item.name, nameSizeMM*MM2PT, true, inner*MM2PT)
+      .slice(0, Math.max(1,Math.floor(nameMax/(nameSizeMM*LH)))); }
+    nameBlockMM = nameLines.length*nameSizeMM*LH;
+  }
+
+  // ---- reparto vertical (desde arriba, en mm) — igual que el layout flex de pantalla
+  const yName = f.margin;
+  const bcSpace = avail - nameBlockMM - footH;
+  const yBC = f.margin + nameBlockMM + Math.max(0,(bcSpace - bc.heightMM)/2);
+  const yFoot = f.margin + avail - footH;
+
+  const ops=[];
+  ops.push('0 g'); // negro
+  const Y = mm => (ch - mm)*MM2PT;   // mm desde arriba -> puntos desde abajo
+
+  // barras
+  for(const b of g.bars){
+    const x=(f.margin + b.x*X)*MM2PT;
+    const w=(b.w*X)*MM2PT;
+    const hTop=yBC, hBot=yBC + b.h*X;
+    ops.push(x.toFixed(3)+' '+Y(hBot).toFixed(3)+' '+w.toFixed(3)+' '+((hBot-hTop)*MM2PT).toFixed(3)+' re f');
+  }
+  // digitos bajo las barras
+  for(const t of g.texts){
+    const sizePt=t.size*X*MM2PT;
+    const wTxt=measure(t.t,sizePt,false);
+    const x=(f.margin + t.cx*X)*MM2PT - wTxt/2;
+    const y=Y(yBC + t.by*X);
+    ops.push('BT /F1 '+sizePt.toFixed(3)+' Tf '+x.toFixed(3)+' '+y.toFixed(3)+' Td ('+pdfEsc(t.t)+') Tj ET');
+  }
+  // nombre (bold, centrado)
+  if(nameLines.length){
+    const sizePt=nameSizeMM*MM2PT, lhMM=nameSizeMM*1.08;
+    nameLines.forEach((ln,i)=>{
+      const wTxt=measure(ln,sizePt,true);
+      const x=(cw/2)*MM2PT - wTxt/2;
+      const baseline = yName + lhMM*i + nameSizeMM*0.82;
+      ops.push('BT /F2 '+sizePt.toFixed(3)+' Tf '+x.toFixed(3)+' '+Y(baseline).toFixed(3)+' Td ('+pdfEsc(ln)+') Tj ET');
+    });
+  }
+  // pie
+  if(hasFoot){
+    const sizePt=1.9*MM2PT;
+    const wTxt=measure(item.foot.trim(),sizePt,false);
+    ops.push('BT /F1 '+sizePt.toFixed(3)+' Tf '+((cw/2)*MM2PT - wTxt/2).toFixed(3)+' '+Y(yFoot+1.9*0.82).toFixed(3)+' Td ('+pdfEsc(item.foot.trim())+') Tj ET');
+  }
+
+  let stream=ops.join('\n');
+  // rotacion: girar 90 grados dentro de la pagina f.w x f.h
+  if(f.rot){
+    stream='q 0 1 -1 0 '+(f.w*MM2PT).toFixed(3)+' 0 cm\n'+stream+'\nQ';
+  }
+  return stream;
+}
+
+function buildPDF(items, f){
+  const pages=[];
+  for(const it of items){
+    let st; try{ st=labelStream(it,f); }catch(e){ continue; }
+    const copies=Math.max(1,Math.min(500,it.qty||1));
+    for(let c=0;c<copies;c++){ pages.push(st); if(pages.length>=500) break; }
+    if(pages.length>=500) break;
+  }
+  if(!pages.length) return null;
+
+  const wPt=(f.w*MM2PT).toFixed(3), hPt=(f.h*MM2PT).toFixed(3);
+  const objs=[];
+  const kids=[];
+  // 1 catalog, 2 pages, 3 font F1, 4 font F2, luego pares page/content
+  objs[1]='<</Type/Catalog/Pages 2 0 R>>';
+  objs[3]='<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>';
+  objs[4]='<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>';
+  let id=5;
+  for(const st of pages){
+    const pageId=id++, contId=id++;
+    kids.push(pageId+' 0 R');
+    objs[pageId]='<</Type/Page/Parent 2 0 R/MediaBox[0 0 '+wPt+' '+hPt+']'+
+      '/Resources<</Font<</F1 3 0 R/F2 4 0 R>>>>/Contents '+contId+' 0 R>>';
+    objs[contId]='<</Length '+st.length+'>>\nstream\n'+st+'\nendstream';
+  }
+  objs[2]='<</Type/Pages/Kids['+kids.join(' ')+']/Count '+pages.length+'>>';
+
+  let out='%PDF-1.4\n';
+  const offs=[];
+  for(let i=1;i<id;i++){
+    offs[i]=out.length;
+    out += i+' 0 obj\n'+objs[i]+'\nendobj\n';
+  }
+  const xref=out.length;
+  out += 'xref\n0 '+id+'\n0000000000 65535 f \n';
+  for(let i=1;i<id;i++) out += String(offs[i]).padStart(10,'0')+' 00000 n \n';
+  out += 'trailer\n<</Size '+id+'/Root 1 0 R>>\nstartxref\n'+xref+'\n%%EOF';
+
+  const bytes=new Uint8Array(out.length);
+  for(let i=0;i<out.length;i++) bytes[i]=out.charCodeAt(i)&0xFF;
+  return new Blob([bytes],{type:'application/pdf'});
+}
+
+/* =========================================================
+   4. UI
+   ========================================================= */
+const $=id=>document.getElementById(id);
+let lote=[]; let selected=0; let zoom=1;
+
+function currentItem(){
+  return {
+    code:$('fCode').value.trim(),
+    name:$('fName').value,
+    foot:$('fFoot').value,
+    type:$('fType').value,
+    qty:Math.max(1,Math.min(500,+$('fQty').value||1))
+  };
+}
+
+function renderPreview(){
+  const box=$('preview'); box.innerHTML='';
+  const msg=$('codeMsg'); msg.className='msg'; msg.textContent='';
+  $('statline').textContent='';
+  const it=currentItem();
+  if(!it.code){ box.innerHTML='<div class="empty" style="padding:40px">Escribe un código para ver la etiqueta.</div>'; return; }
+  try{
+    const el=makeLabel(it);
+    box.appendChild(el);
+    fitNames(box);
+    const m=el._meta;
+    if(!m) throw new Error("Error interno al componer la etiqueta.");
+    const mag=(m.module/0.33*100);
+    if(m.note){ msg.className='msg ok'; msg.textContent=m.note; }
+    let stat='Módulo '+m.module.toFixed(3)+' mm · '+m.modules+' módulos · '+m.type.toUpperCase()+' '+m.code;
+    if(m.type!=='code128'){
+      stat+=' · magnificación '+mag.toFixed(0)+'%';
+      if(mag<80){ msg.className='msg warn'; msg.textContent='Magnificación '+mag.toFixed(0)+'% (bajo el mínimo GS1 de 80%). Puede fallar al escanear: usa una etiqueta más ancha o Code 128.'; }
+    }
+    const dots203=m.module/25.4*203;
+    stat+=' · '+dots203.toFixed(1)+' puntos/módulo @203dpi';
+    $('statline').textContent=stat;
+  }catch(e){
+    msg.className='msg err'; msg.textContent=e.message;
+    box.innerHTML='<div class="empty" style="padding:40px">—</div>';
+  }
+}
+
+function renderLote(){
+  const box=$('loteBox');
+  const total=lote.reduce((a,b)=>a+b.qty,0);
+  $('loteCount').textContent=total;
+  if(!lote.length){ box.innerHTML='<div class="empty">El lote está vacío. Llena el formulario y dale “Agregar al lote”.</div>'; return; }
+  let h='<table><thead><tr><th>Código</th><th>Producto</th><th style="text-align:center">Copias</th><th></th></tr></thead><tbody>';
+  lote.forEach((it,i)=>{
+    h+='<tr class="'+(i===selected?'sel':'')+'" data-i="'+i+'">'+
+       '<td class="mono">'+esc(it.code)+'</td>'+
+       '<td class="nm">'+esc(it.name||'—')+'</td>'+
+       '<td style="text-align:center"><input type="number" class="qtyIn" data-i="'+i+'" value="'+it.qty+'" min="1" max="500" style="width:62px;padding:4px 6px;text-align:center"></td>'+
+       '<td style="text-align:right;white-space:nowrap"><button class="mini" data-edit="'+i+'" title="Cargar en el formulario">&#9998;</button><button class="mini" data-del="'+i+'" title="Quitar">&times;</button></td></tr>';
+  });
+  box.innerHTML=h+'</tbody></table>';
+  save();
+}
+
+function addToLote(){
+  const it=currentItem();
+  try{ build(it.code,it.type); }catch(e){ const m=$('codeMsg'); m.className='msg err'; m.textContent=e.message; return; }
+  lote.push(it); selected=lote.length-1; renderLote();
+}
+
+function doPrint(items){
+  const pa=$('printArea'); pa.innerHTML='';
+  const f=fmt();
+  const pw=f.w, ph=f.h;
+  let st=document.getElementById('pageStyle');
+  if(!st){ st=document.createElement('style'); st.id='pageStyle'; document.head.appendChild(st); }
+  st.textContent='@page{size:'+pw+'mm '+ph+'mm; margin:0}';
+  let n=0;
+  for(const it of items){
+    for(let c=0;c<it.qty;c++){
+      const page=document.createElement('div');
+      page.className='print-page';
+      page.style.width=pw+'mm'; page.style.height=ph+'mm'; page.style.overflow='hidden';
+      page.style.display='flex'; page.style.alignItems='center'; page.style.justifyContent='center';
+      try{ page.appendChild(makeLabel(it)); }catch(e){ continue; }
+      pa.appendChild(page); n++;
+      if(n>=500) break;
+    }
+    if(n>=500) break;
+  }
+  if(!n){ alert('No hay nada válido que imprimir.'); return; }
+  fitNames(pa);
+  setTimeout(()=>window.print(),120);
+}
+
+/* --- descargas --- */
+function labelToSVG(){
+  const it=currentItem();
+  let el; try{ el=makeLabel(it); }catch(e){ alert(e.message); return null; }
+  const host=document.createElement("div");
+  host.style.cssText="position:fixed;left:-9999px;top:0";
+  host.appendChild(el); document.body.appendChild(host); fitNames(host);
+  const f=fmt();
+  host.querySelectorAll(".lbl-name,.lbl-foot").forEach(n=>{
+    const cs=getComputedStyle(n);
+    n.setAttribute("style",(n.getAttribute("style")||"")+";font-size:"+cs.fontSize+";line-height:"+cs.lineHeight+";font-weight:"+cs.fontWeight);
+  });
+  const markup=el.outerHTML;
+  document.body.removeChild(host);
+  const css=".label{background:#fff;color:#000;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;font-family:Helvetica,Arial,sans-serif;box-sizing:border-box}"
+    +".lbl-name{font-weight:700;text-align:center;line-height:1.08;width:100%;flex:0 0 auto;overflow:hidden;word-break:break-word;text-transform:uppercase}"
+    +".lbl-bc{width:100%;display:flex;justify-content:center;align-items:center}.lbl-bc svg{display:block}"
+    +".lbl-foot{width:100%;text-align:center;line-height:1.1;font-weight:500;overflow:hidden;white-space:nowrap}";
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+f.w+'mm" height="'+f.h+'mm" viewBox="0 0 '+f.w+' '+f.h+'">'
+    +'<style>'+css+'</style>'
+    +'<rect width="'+f.w+'" height="'+f.h+'" fill="#fff"/>'
+    +'<foreignObject x="0" y="0" width="'+f.w+'" height="'+f.h+'">'
+    +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+f.w+'mm;height:'+f.h+'mm;display:flex;align-items:center;justify-content:center;overflow:hidden">'+markup+'</div>'
+    +'</foreignObject></svg>';
+  return {svg, cw:f.w, ch:f.h, name:(it.code||"etiqueta").replace(/[^A-Za-z0-9_-]/g,"")};
+}
+function dl(blob,fname){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=fname;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* --- persistencia --- */
+function save(){
+  try{ localStorage.setItem('qi_etq', JSON.stringify({lote, fmt:{
+    p:$('fPreset').value,w:$('fW').value,h:$('fH').value,m:$('fMargin').value,r:$('fRot').value,
+    sn:$('fShowName').checked, sd:$('fShowDigits').checked, b:$('fBold').checked}})); }catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('qi_etq')||'null');
+    if(!d) return;
+    if(Array.isArray(d.lote)) lote=d.lote;
+    if(d.fmt){ $('fPreset').value=d.fmt.p||'40x25'; $('fW').value=d.fmt.w||40; $('fH').value=d.fmt.h||25;
+      $('fMargin').value=d.fmt.m||1.2; $('fRot').value=d.fmt.r||0;
+      $('fShowName').checked=d.fmt.sn!==false; $('fShowDigits').checked=d.fmt.sd!==false; $('fBold').checked=!!d.fmt.b; }
+  }catch(e){}
+}
+
+/* --- eventos --- */
+['fName','fCode','fFoot','fType','fMargin','fRot','fW','fH'].forEach(id=>{
+  $(id).addEventListener('input',()=>{renderPreview();save();});
+  $(id).addEventListener('change',()=>{renderPreview();save();});
+});
+['fShowName','fShowDigits','fBold'].forEach(id=>$(id).addEventListener('change',()=>{renderPreview();save();}));
+$('fPreset').addEventListener('change',()=>{
+  $('customSize').style.display = $('fPreset').value==='custom'?'grid':'none';
+  renderPreview(); save();
+});
+$('btnAdd').addEventListener('click',addToLote);
+$('btnClearForm').addEventListener('click',()=>{ $('fCode').value=''; $('fName').value=''; $('fFoot').value=''; $('fQty').value=1; renderPreview(); });
+$('btnClearLote').addEventListener('click',()=>{ if(lote.length && confirm('¿Vaciar el lote completo?')){ lote=[]; renderLote(); } });
+$('btnPrintLote').addEventListener('click',()=>{ if(!lote.length){alert('El lote está vacío.');return;} doPrint(lote); });
+$('btnPrintOne').addEventListener('click',()=>{ const it=currentItem(); if(!it.code){alert('Escribe un código primero.');return;} doPrint([it]); });
+
+$('loteBox').addEventListener('click',e=>{
+  const d=e.target.closest('[data-del]'); const ed=e.target.closest('[data-edit]');
+  if(d){ lote.splice(+d.dataset.del,1); if(selected>=lote.length) selected=lote.length-1; renderLote(); return; }
+  if(ed){ const it=lote[+ed.dataset.edit]; $('fCode').value=it.code; $('fName').value=it.name||''; $('fFoot').value=it.foot||''; $('fType').value=it.type||'auto'; $('fQty').value=it.qty; selected=+ed.dataset.edit; renderLote(); renderPreview(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  const tr=e.target.closest('tr[data-i]'); if(tr){ selected=+tr.dataset.i; renderLote(); }
+});
+$('loteBox').addEventListener('input',e=>{
+  const q=e.target.closest('.qtyIn'); if(!q) return;
+  lote[+q.dataset.i].qty=Math.max(1,Math.min(500,+q.value||1));
+  $('loteCount').textContent=lote.reduce((a,b)=>a+b.qty,0); save();
+});
+$('btnBulk').addEventListener('click',()=>{
+  const lines=$('bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  let ok=0, bad=[];
+  for(const ln of lines){
+    const p=ln.split(/\s*[|\t]\s*/);
+    const it={code:(p[0]||'').trim(), name:(p[1]||'').trim(), foot:'', type:'auto', qty:Math.max(1,+(p[2]||1)||1)};
+    try{ build(it.code,'auto'); lote.push(it); ok++; }catch(err){ bad.push(it.code+' → '+err.message); }
+  }
+  renderLote(); $('bulk').value='';
+  alert(ok+' cargadas al lote.'+(bad.length?'\n\nRechazadas:\n'+bad.join('\n'):''));
+});
+
+document.querySelectorAll('[data-zoom]').forEach(b=>b.addEventListener('click',()=>{
+  zoom=+b.dataset.zoom;
+  $('zoomwrap').style.transform='scale('+zoom+')';
+  $('stage').style.minHeight=(120*zoom)+'px';
+  $('zoomTag').textContent = zoom===1?'tamaño real':zoom+'× (solo pantalla)';
+}));
+
+$('btnPdf').addEventListener('click',()=>{
+  const it=currentItem();
+  if(!it.code){ alert('Escribe un código primero.'); return; }
+  try{ build(it.code,it.type); }catch(e){ alert(e.message); return; }
+  const b=buildPDF([Object.assign({},it,{qty:it.qty})], fmt());
+  if(!b){ alert('No se pudo generar el PDF.'); return; }
+  const suf = it.qty>1 ? '-x'+it.qty : '';
+  dl(b,'etiqueta-'+it.code.replace(/[^A-Za-z0-9_-]/g,'')+suf+'.pdf');
+});
+$('btnPdfLote').addEventListener('click',()=>{
+  if(!lote.length){ alert('El lote está vacío.'); return; }
+  const b=buildPDF(lote, fmt());
+  if(!b){ alert('No se pudo generar el PDF.'); return; }
+  const total=lote.reduce((a,x)=>a+x.qty,0);
+  dl(b,'etiquetas-lote-'+total+'.pdf');
+});
+$('btnSvg').addEventListener('click',()=>{
+  const r=labelToSVG(); if(!r) return;
+  dl(new Blob([r.svg],{type:'image/svg+xml'}), 'etiqueta-'+r.name+'.svg');
+});
+$('btnPng').addEventListener('click',()=>{
+  const r=labelToSVG(); if(!r) return;
+  const DPI=300, px=mm=>Math.round(mm/25.4*DPI);
+  const img=new Image();
+  img.onload=()=>{
+    const cv=document.createElement('canvas'); cv.width=px(r.cw); cv.height=px(r.ch);
+    const ctx=cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,cv.width,cv.height);
+    ctx.drawImage(img,0,0,cv.width,cv.height);
+    cv.toBlob(b=>dl(b,'etiqueta-'+r.name+'.png'),'image/png');
+  };
+  img.onerror=()=>alert('No se pudo generar el PNG en este navegador. Usa "Descargar SVG" o imprime directo a PDF.');
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(r.svg);
+});
+
+/* --- arranque --- */
+load();
+$('customSize').style.display = $('fPreset').value==='custom'?'grid':'none';
+if(!$('fCode').value){
+  $('fCode').value='7503050904104';
+  $('fName').value='STEJAR THERMAL PAD 95X45X1.5MM 12.8 W/MK EXTREME ALTO RENDIMIENTO';
+}
+renderLote(); renderPreview();
+window.addEventListener('beforeprint',()=>{});
+window.addEventListener('afterprint',()=>{ $('printArea').innerHTML=''; });
+</script>
+</body>
+</html>
